@@ -8,17 +8,26 @@ import PageTitle from '@/components/common/PageTitle';
 import type { Course, Quiz } from '@/types';
 import { getCourseById, getCourses } from '@/services/courseService';
 import { getQuizzesByCourseId } from '@/services/quizService';
-// Toasts would need to be handled in a child client component if still needed for actions on this page.
 
 export async function generateStaticParams() {
   try {
     const courses = await getCourses();
-    return courses.map((course) => ({
-      courseId: course.id,
-    }));
-  } catch (error) {
-    console.error("Failed to generate static params for courses:", error);
+    if (Array.isArray(courses)) {
+      const validPaths = courses
+        .filter(course => course && typeof course.id === 'string')
+        .map((course) => ({
+          courseId: course.id,
+        }));
+      if (validPaths.length === 0) {
+        console.warn("generateStaticParams for courses: No valid course IDs found to generate paths. This might lead to 404s for course pages if not intended.");
+      }
+      return validPaths;
+    }
+    console.error("generateStaticParams for courses: getCourses() did not return an array. Returning empty paths.");
     return [];
+  } catch (error) {
+    console.error("Error in generateStaticParams for courses, returning empty paths:", error);
+    return []; // Must return an array, even on error
   }
 }
 
@@ -27,8 +36,20 @@ export default async function CourseDetailPage({ params }: { params: { courseId:
   let course: Course | null = null;
   let courseQuizzes: Quiz[] = [];
 
+  if (!courseId) {
+    // This case should ideally not be reached if generateStaticParams works
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+        <PageTitle title="Invalid Course ID" description="No course ID was provided." />
+        <Button asChild>
+          <Link href="/student/dashboard">Back to Dashboard</Link>
+        </Button>
+      </div>
+    );
+  }
+
   try {
-    // Fetch data directly as this is a Server Component
     const [courseData, quizzesData] = await Promise.all([
       getCourseById(courseId),
       getQuizzesByCourseId(courseId)
@@ -37,15 +58,14 @@ export default async function CourseDetailPage({ params }: { params: { courseId:
     courseQuizzes = quizzesData;
   } catch (error) {
     console.error(`Failed to fetch course details for ${courseId}:`, error);
-    // Error handling can be more sophisticated, e.g., redirecting or showing a generic error page
-    // For now, if course is null, the existing "Course Not Found" message will show.
+    // If course is not found or another error occurs, course will remain null
   }
 
   if (!course) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-        <PageTitle title="Course Not Found" description="The course you are looking for does not exist or has been removed." />
+        <PageTitle title="Course Not Found" description="The course you are looking for does not exist, has been removed, or an error occurred while fetching it." />
         <Button asChild>
           <Link href="/student/dashboard">Back to Dashboard</Link>
         </Button>
