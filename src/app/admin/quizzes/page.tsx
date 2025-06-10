@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { QuizForm, type QuizFormValues } from '@/components/admin/QuizForm';
+import { QuizForm, type QuizFormValues, NONE_COURSE_VALUE } from '@/components/admin/QuizForm';
 import { QuizTable } from '@/components/admin/QuizTable';
 import type { Quiz } from '@/types';
 import { mockQuizzes, mockCourses } from '@/data/mock'; // Using mock data
@@ -38,18 +38,21 @@ export default function AdminQuizzesPage() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
 
+    const finalCourseId = data.courseId === NONE_COURSE_VALUE ? undefined : data.courseId;
+    const submissionData = { ...data, courseId: finalCourseId };
+
     if (editingQuiz) {
       // Update existing quiz
       setQuizzes(prev => 
-        prev.map(q => q.id === editingQuiz.id ? { ...q, ...data, questions: data.questions.map(ques => ({...ques, id: ques.id || `q-${Date.now()}-${Math.random()}`})) } : q)
+        prev.map(q => q.id === editingQuiz.id ? { ...q, ...submissionData, questions: submissionData.questions.map(ques => ({...ques, id: ques.id || `q-${Date.now()}-${Math.random()}`})) } : q)
       );
       toast({ title: "Success!", description: "Quiz updated successfully." });
     } else {
       // Create new quiz
       const newQuiz: Quiz = {
         id: `quiz-${Date.now()}`, // Simple unique ID
-        ...data,
-        questions: data.questions.map(ques => ({...ques, id: `q-${Date.now()}-${Math.random()}`})),
+        ...submissionData,
+        questions: submissionData.questions.map(ques => ({...ques, id: `q-${Date.now()}-${Math.random()}`})),
       };
       setQuizzes(prev => [newQuiz, ...prev]);
       toast({ title: "Success!", description: "Quiz created successfully." });
@@ -116,3 +119,4 @@ export default function AdminQuizzesPage() {
     </div>
   );
 }
+

@@ -46,12 +46,14 @@ interface QuizFormProps {
   courseOptions?: { id: string; title: string }[]; // For linking quiz to course
 }
 
+export const NONE_COURSE_VALUE = "__NONE__";
+
 export function QuizForm({ onSubmit, initialData, isLoading = false, courseOptions = [] }: QuizFormProps) {
   const form = useForm<QuizFormValues>({
     resolver: zodResolver(quizFormSchema),
     defaultValues: initialData ? 
-      { ...initialData, questions: initialData.questions.map(q => ({...q})) } : 
-      { title: "", description: "", courseId: "", questions: [{ text: "", options: ["", ""], correctAnswerIndex: 0, type: "multiple-choice" }] },
+      { ...initialData, courseId: initialData.courseId || undefined, questions: initialData.questions.map(q => ({...q})) } : 
+      { title: "", description: "", courseId: undefined, questions: [{ text: "", options: ["", ""], correctAnswerIndex: 0, type: "multiple-choice" }] },
   });
 
   const { fields, append, remove, update } = useFieldArray({
@@ -61,9 +63,9 @@ export function QuizForm({ onSubmit, initialData, isLoading = false, courseOptio
 
   useEffect(() => {
     if (initialData) {
-      form.reset({ ...initialData, questions: initialData.questions.map(q => ({...q})) });
+      form.reset({ ...initialData, courseId: initialData.courseId || undefined, questions: initialData.questions.map(q => ({...q})) });
     } else {
-      form.reset({ title: "", description: "", courseId: "", questions: [{ text: "", options: ["", ""], correctAnswerIndex: 0, type: "multiple-choice" }] });
+      form.reset({ title: "", description: "", courseId: undefined, questions: [{ text: "", options: ["", ""], correctAnswerIndex: 0, type: "multiple-choice" }] });
     }
   }, [initialData, form]);
 
@@ -133,7 +135,7 @@ export function QuizForm({ onSubmit, initialData, isLoading = false, courseOptio
                         <SelectTrigger><SelectValue placeholder="Select a course" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value={NONE_COURSE_VALUE}>None</SelectItem>
                         {courseOptions.map(course => (
                           <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
                         ))}
@@ -265,3 +267,4 @@ export function QuizForm({ onSubmit, initialData, isLoading = false, courseOptio
     </Form>
   );
 }
+
