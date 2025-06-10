@@ -48,7 +48,7 @@ export default function HomePage() {
       <section className="w-full py-20 md:py-32 bg-gradient-to-br from-primary to-accent text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
-            Unlock Your Potential with EduHub
+            Unlock Your Potential with LKP Prestasi
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl mb-10 max-w-3xl mx-auto">
             Your journey to knowledge and skill mastery starts here. Explore courses designed by experts.
@@ -68,7 +68,7 @@ export default function HomePage() {
       <section className="w-full py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <h2 className="font-headline text-3xl md:text-4xl font-semibold text-center mb-12 text-foreground">
-            Why Choose EduHub?
+            Why Choose LKP Prestasi?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center text-center p-6 bg-card rounded-lg shadow-md">

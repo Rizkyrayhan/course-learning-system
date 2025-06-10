@@ -51,7 +51,7 @@ export function StudentRegisterForm() {
       
       toast({
         title: "Registration Successful!",
-        description: "Welcome to EduHub. You can now log in.",
+        description: "Welcome to LKP Prestasi. You can now log in.",
       });
       router.push("/login");
     } catch (error: any) {

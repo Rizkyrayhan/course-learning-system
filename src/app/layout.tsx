@@ -7,7 +7,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
-  title: 'EduHub - Your Learning Partner',
+  title: 'LKP Prestasi - Your Learning Partner',
   description: 'Interactive and modern course learning system.',
 };
 

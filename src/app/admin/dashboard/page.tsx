@@ -15,7 +15,7 @@ export default function AdminDashboardPage() {
     <div>
       <PageTitle 
         title={`Welcome, ${admin?.username || 'Admin'}!`}
-        description="Manage EduHub content and settings from here."
+        description="Manage LKP Prestasi content and settings from here."
       />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

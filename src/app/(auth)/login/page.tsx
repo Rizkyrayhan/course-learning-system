@@ -14,7 +14,7 @@ export default function LoginPage() {
           <Card className="shadow-2xl">
             <CardHeader className="text-center">
               <CardTitle className="font-headline text-3xl text-primary">Welcome Back!</CardTitle>
-              <CardDescription>Log in to continue your learning journey or manage EduHub.</CardDescription>
+              <CardDescription>Log in to continue your learning journey or manage LKP Prestasi.</CardDescription>
             </CardHeader>
             <CardContent>
               <LoginFormController />

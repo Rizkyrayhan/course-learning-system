@@ -14,7 +14,7 @@ export default function RegisterPage() {
           <Card className="shadow-2xl">
             <CardHeader className="text-center">
               <CardTitle className="font-headline text-3xl text-primary">Create an Account</CardTitle>
-              <CardDescription>Join EduHub and start your learning adventure!</CardDescription>
+              <CardDescription>Join LKP Prestasi and start your learning adventure!</CardDescription>
             </CardHeader>
             <CardContent>
               <StudentRegisterForm />

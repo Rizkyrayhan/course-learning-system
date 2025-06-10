@@ -56,7 +56,7 @@ export function LoginFormController() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      toast({ title: "Login Successful!", description: "Welcome back to EduHub." });
+      toast({ title: "Login Successful!", description: "Welcome back to LKP Prestasi." });
       router.push("/student/dashboard");
     } catch (error: any) {
       console.error("Student login error:", error);
