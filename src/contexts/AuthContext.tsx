@@ -27,40 +27,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      if (!firebaseUser) { // If firebase user logs out, ensure admin is also logged out unless explicitly handled
-        const storedAdmin = localStorage.getItem('adminUser');
-        if(!storedAdmin) setAdmin(null); // only clear admin if not found in LS
-      }
-      setLoading(false);
-    });
+    let localAdminChecked = false;
+    let authStateResolved = false;
 
-    // Check for persisted admin session
+    const finalizeLoadingState = () => {
+      if (localAdminChecked && authStateResolved) {
+        setLoading(false);
+      }
+    };
+
+    // Check for persisted admin session from localStorage
     const storedAdminUser = localStorage.getItem('adminUser');
     if (storedAdminUser) {
       try {
         setAdmin(JSON.parse(storedAdminUser));
       } catch (e) {
-        localStorage.removeItem('adminUser');
+        console.error("Failed to parse admin user from localStorage", e);
+        localStorage.removeItem('adminUser'); 
+        setAdmin(null); 
       }
+    } else {
+      setAdmin(null);
     }
-    // Ensure loading is false after checking local storage too
-    setLoading(false);
+    localAdminChecked = true;
+    finalizeLoadingState();
 
+    // Listen for Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      if (!firebaseUser) {
+        // If Firebase user logs out, and no admin user is currently in localStorage,
+        // then truly no user is logged in.
+        const currentStoredAdmin = localStorage.getItem('adminUser');
+        if (!currentStoredAdmin) {
+          setAdmin(null);
+        }
+      }
+      authStateResolved = true;
+      finalizeLoadingState();
+    });
 
     return () => unsubscribe();
   }, []);
 
   const loginAdmin = useCallback(async (usernameInput: string, passInput: string): Promise<boolean> => {
     setLoading(true);
-    // Local admin credentials
     if (usernameInput === 'Admin' && passInput === 'admin123') {
       const adminData = { username: 'Admin' };
       setAdmin(adminData);
       localStorage.setItem('adminUser', JSON.stringify(adminData));
-      setUser(null); // Ensure no student user is active
-      await firebaseSignOut(auth).catch(console.error); // Sign out any Firebase user
+      setUser(null); 
+      await firebaseSignOut(auth).catch(console.error); 
       setLoading(false);
       return true;
     }

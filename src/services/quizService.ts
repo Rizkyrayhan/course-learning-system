@@ -59,39 +59,60 @@ export async function getQuizzesByCourseId(courseId: string): Promise<Quiz[]> {
 }
 
 export async function addQuiz(data: Omit<Quiz, 'id' | 'createdAt' | 'updatedAt'>): Promise<Quiz> {
+  const now = Timestamp.fromDate(new Date());
+  const generatedQuestions = (data.questions || []).map(q => ({
+    ...q,
+    id: q.id || `q-${Date.now()}-${Math.random().toString(36).substring(2,7)}`
+  }));
+
   const newQuizData = {
-    ...data,
-    questions: (data.questions || []).map(q => ({
-        ...q,
-        id: q.id || `q-${Date.now()}-${Math.random().toString(36).substring(2,7)}`
-    })),
-    createdAt: Timestamp.fromDate(new Date()),
-    updatedAt: Timestamp.fromDate(new Date()),
+    title: data.title,
+    description: data.description,
+    courseId: data.courseId, // This can be undefined if no course is linked
+    questions: generatedQuestions,
+    createdAt: now,
+    updatedAt: now,
   };
+
   const docRef = await addDoc(quizzesCollection, newQuizData);
-  // Constructing the return object
+  
+  // Construct the full Quiz object to return
   return {
     id: docRef.id,
-    ...data, // original data
-    questions: newQuizData.questions,
-    createdAt: newQuizData.createdAt.toDate().toISOString(),
-    updatedAt: newQuizData.updatedAt.toDate().toISOString(),
+    title: data.title,
+    description: data.description,
+    courseId: data.courseId,
+    questions: generatedQuestions,
+    createdAt: now.toDate().toISOString(),
+    updatedAt: now.toDate().toISOString(),
   };
 }
 
 export async function updateQuiz(id: string, data: Partial<Omit<Quiz, 'id' | 'createdAt'>>): Promise<void> {
   const docRef = doc(db, 'quizzes', id);
-  const updateData = {
-      ...data,
-      updatedAt: Timestamp.fromDate(new Date())
+  
+  const updatePayload: any = {
+    updatedAt: Timestamp.fromDate(new Date())
   };
+
+  // Explicitly copy allowed fields to avoid unintended updates
+  if (data.title !== undefined) updatePayload.title = data.title;
+  if (data.description !== undefined) updatePayload.description = data.description;
+  
+  // Handle courseId explicitly: if 'courseId' is a key in 'data', it means user interacted with this field.
+  // It could be a string (course ID) or undefined (if "None" was selected).
+  if (Object.prototype.hasOwnProperty.call(data, 'courseId')) {
+    updatePayload.courseId = data.courseId;
+  }
+
   if (data.questions) {
-      updateData.questions = data.questions.map(q => ({
+      updatePayload.questions = data.questions.map(q => ({
           ...q,
           id: q.id || `q-${Date.now()}-${Math.random().toString(36).substring(2,7)}`
       }));
   }
-  await updateDoc(docRef, updateData);
+  
+  await updateDoc(docRef, updatePayload);
 }
 
 export async function deleteQuiz(id: string): Promise<void> {
