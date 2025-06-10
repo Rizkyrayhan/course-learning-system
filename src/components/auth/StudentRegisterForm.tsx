@@ -56,11 +56,19 @@ export function StudentRegisterForm() {
       router.push("/login");
     } catch (error: any) {
       console.error("Registration error:", error);
-      toast({
-        title: "Registration Failed",
-        description: error.message || "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      if (error.code === 'auth/email-already-in-use') {
+        toast({
+          title: "Registration Failed",
+          description: "This email address is already registered. Please try logging in or use a different email.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: error.message || "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
