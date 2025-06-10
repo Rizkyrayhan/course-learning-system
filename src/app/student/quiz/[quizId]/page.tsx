@@ -28,7 +28,7 @@ export default async function TakeQuizPage({ params }: { params: { quizId: strin
     // Fetch data directly as this is a Server Component
     quiz = await getQuizById(quizId);
   } catch (error) {
-    console.error("Failed to fetch quiz:", error);
+    console.error(`Failed to fetch quiz ${quizId}:`, error);
     // Error handling can be more sophisticated.
     // If quiz remains null, the "Quiz Not Found" message will show.
   }

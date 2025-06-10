@@ -36,7 +36,7 @@ export default async function CourseDetailPage({ params }: { params: { courseId:
     course = courseData;
     courseQuizzes = quizzesData;
   } catch (error) {
-    console.error("Failed to fetch course details:", error);
+    console.error(`Failed to fetch course details for ${courseId}:`, error);
     // Error handling can be more sophisticated, e.g., redirecting or showing a generic error page
     // For now, if course is null, the existing "Course Not Found" message will show.
   }
