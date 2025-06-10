@@ -2,21 +2,56 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import { mockCourses, mockQuizzes } from '@/data/mock'; // Using mock data
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { AlertCircle, ChevronRight, Clock, FileText, Users, Video, HelpCircle, ListChecks } from 'lucide-react';
+import { AlertCircle, ChevronRight, Clock, FileText, Users, Video, HelpCircle, ListChecks, Loader2 } from 'lucide-react';
 import PageTitle from '@/components/common/PageTitle';
+import type { Course, Quiz } from '@/types';
+import { useEffect, useState, useCallback } from 'react';
+import { getCourseById } from '@/services/courseService';
+import { getQuizzesByCourseId } from '@/services/quizService';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CourseDetailPage() {
   const params = useParams();
   const courseId = params.courseId as string;
   
-  // Find the course and its quizzes from mock data
-  const course = mockCourses.find(c => c.id === courseId);
-  const courseQuizzes = mockQuizzes.filter(q => q.courseId === courseId);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [courseQuizzes, setCourseQuizzes] = useState<Quiz[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchData = useCallback(async () => {
+    if (!courseId) return;
+    setIsLoading(true);
+    try {
+      const [courseData, quizzesData] = await Promise.all([
+        getCourseById(courseId),
+        getQuizzesByCourseId(courseId)
+      ]);
+      setCourse(courseData);
+      setCourseQuizzes(quizzesData);
+    } catch (error) {
+      console.error("Failed to fetch course details:", error);
+      toast({ title: "Error", description: "Could not load course details.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [courseId, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!course) {
     return (
@@ -30,26 +65,7 @@ export default function CourseDetailPage() {
     );
   }
 
-  // Placeholder modules and lessons structure
-  const modules = course.modules || [
-    { 
-      id: 'module-1', 
-      title: 'Module 1: Getting Started', 
-      lessons: [
-        { id: 'lesson-1-1', title: 'Introduction to the Course', content: '...', videoUrl: 'https://placehold.co/16x9' },
-        { id: 'lesson-1-2', title: 'Core Concepts', content: '...', quizId: courseQuizzes.length > 0 ? courseQuizzes[0].id : undefined },
-      ]
-    },
-    { 
-      id: 'module-2', 
-      title: 'Module 2: Advanced Topics', 
-      lessons: [
-        { id: 'lesson-2-1', title: 'Deep Dive into X', content: '...' },
-        { id: 'lesson-2-2', title: 'Practical Application Y', content: '...', videoUrl: 'https://placehold.co/16x9' },
-      ]
-    },
-  ];
-
+  const modules = course.modules || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -70,42 +86,49 @@ export default function CourseDetailPage() {
             </div>
           </div>
 
-          {/* Course Modules/Lessons */}
           <h2 className="font-headline text-2xl font-semibold mb-6 text-foreground">Course Content</h2>
-          <div className="space-y-6">
-            {modules.map((module, moduleIndex) => (
-              <Card key={module.id} className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="font-headline text-xl text-primary">
-                    {`Module ${moduleIndex + 1}: ${module.title}`}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {module.lessons.map((lesson, lessonIndex) => (
-                      <li key={lesson.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-md hover:bg-secondary/50 transition-colors">
-                        <div className="flex items-center">
-                          {lesson.videoUrl && <Video className="h-5 w-5 mr-3 text-accent" />}
-                          {!lesson.videoUrl && !lesson.quizId && <FileText className="h-5 w-5 mr-3 text-accent" />}
-                          {lesson.quizId && <HelpCircle className="h-5 w-5 mr-3 text-accent" />}
-                          <span className="text-foreground">{`${lessonIndex + 1}. ${lesson.title}`}</span>
-                        </div>
-                        {lesson.quizId ? (
-                          <Button variant="ghost" size="sm" asChild className="text-accent">
-                            <Link href={`/student/quiz/${lesson.quizId}`}>Start Quiz <ChevronRight className="h-4 w-4 ml-1" /></Link>
-                          </Button>
-                        ) : (
-                           <Button variant="ghost" size="sm" asChild className="text-accent">
-                            <Link href={`#`}>View Lesson <ChevronRight className="h-4 w-4 ml-1" /></Link>
-                          </Button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {modules.length > 0 ? (
+            <div className="space-y-6">
+              {modules.map((module, moduleIndex) => (
+                <Card key={module.id} className="shadow-md">
+                  <CardHeader>
+                    <CardTitle className="font-headline text-xl text-primary">
+                      {module.title} {/* Using fetched module title */}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {module.lessons && module.lessons.length > 0 ? (
+                      <ul className="space-y-3">
+                        {module.lessons.map((lesson, lessonIndex) => (
+                          <li key={lesson.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-md hover:bg-secondary/50 transition-colors">
+                            <div className="flex items-center">
+                              {lesson.videoUrl && <Video className="h-5 w-5 mr-3 text-accent" />}
+                              {!lesson.videoUrl && !lesson.quizId && <FileText className="h-5 w-5 mr-3 text-accent" />}
+                              {lesson.quizId && <HelpCircle className="h-5 w-5 mr-3 text-accent" />}
+                              <span className="text-foreground">{`${lessonIndex + 1}. ${lesson.title}`}</span>
+                            </div>
+                            {lesson.quizId ? (
+                              <Button variant="ghost" size="sm" asChild className="text-accent">
+                                <Link href={`/student/quiz/${lesson.quizId}`}>Start Quiz <ChevronRight className="h-4 w-4 ml-1" /></Link>
+                              </Button>
+                            ) : (
+                               <Button variant="ghost" size="sm" asChild className="text-accent">
+                                <Link href={`#`}>View Lesson <ChevronRight className="h-4 w-4 ml-1" /></Link>
+                              </Button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-muted-foreground">No lessons in this module yet.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No modules available for this course yet.</p>
+          )}
         </div>
 
         {/* Sidebar with Course Info & Quizzes */}

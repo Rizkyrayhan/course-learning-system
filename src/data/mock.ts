@@ -1,4 +1,8 @@
 
+// This file is no longer actively used as data is fetched from Firebase Firestore.
+// Keeping it for reference or if mock data is needed for isolated testing in the future.
+
+/*
 import type { Announcement, Course, Quiz, Question } from '@/types';
 
 export const mockAnnouncements: Announcement[] = [
@@ -25,6 +29,17 @@ export const mockCourses: Course[] = [
     author: 'Jane Doe',
     duration: '8 Weeks',
     category: 'Web Development',
+    createdAt: new Date().toISOString(),
+    modules: [
+        { 
+          id: 'module-1-1', 
+          title: 'Module 1: Getting Started with Web Dev', 
+          lessons: [
+            { id: 'lesson-1-1-1', title: 'Introduction to HTML', content: 'Learn the basics of HTML structure.' },
+            { id: 'lesson-1-1-2', title: 'Introduction to CSS', content: 'Learn how to style your HTML.', quizId: "quiz-1" },
+          ]
+        },
+    ]
   },
   {
     id: 'course-2',
@@ -34,6 +49,17 @@ export const mockCourses: Course[] = [
     author: 'John Smith',
     duration: '12 Weeks',
     category: 'Data Science',
+    createdAt: new Date().toISOString(),
+     modules: [
+        { 
+          id: 'module-2-1', 
+          title: 'Module 1: Python Basics for Data Science', 
+          lessons: [
+            { id: 'lesson-2-1-1', title: 'Setting up Python Environment', content: '...' },
+            { id: 'lesson-2-1-2', title: 'NumPy Fundamentals', content: '...', quizId: "quiz-2"},
+          ]
+        },
+    ]
   },
   {
     id: 'course-3',
@@ -43,6 +69,7 @@ export const mockCourses: Course[] = [
     author: 'Alice Brown',
     duration: '6 Weeks',
     category: 'Marketing',
+    createdAt: new Date().toISOString(),
   },
 ];
 
@@ -62,6 +89,7 @@ export const mockQuizzes: Quiz[] = [
       { id: 'q1-1', text: 'What does HTML stand for?', options: ['Hyper Text Markup Language', 'High Tech Modern Language', 'Hyperlink and Text Markup Language'], correctAnswerIndex: 0, type: 'multiple-choice' },
       { id: 'q1-2', text: 'The <p> tag is used for paragraphs.', options: ['True', 'False'], correctAnswerIndex: 0, type: 'true-false' },
     ],
+    createdAt: new Date().toISOString(),
   },
   {
     id: 'quiz-2',
@@ -72,5 +100,7 @@ export const mockQuizzes: Quiz[] = [
       { id: 'q2-1', text: 'Which keyword is used to define a function in Python?', options: ['func', 'def', 'function'], correctAnswerIndex: 1, type: 'multiple-choice' },
       { id: 'q2-2', text: 'Python is a statically typed language.', options: ['True', 'False'], correctAnswerIndex: 1, type: 'true-false' },
     ],
+    createdAt: new Date().toISOString(),
   },
 ];
+*/

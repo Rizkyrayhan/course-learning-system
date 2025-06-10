@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PageTitle from '@/components/common/PageTitle';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,51 +10,58 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { AnnouncementForm } from '@/components/admin/AnnouncementForm';
 import { AnnouncementTable } from '@/components/admin/AnnouncementTable';
 import type { Announcement } from '@/types';
-import { mockAnnouncements } from '@/data/mock'; // Using mock data
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { getAnnouncements, addAnnouncement, updateAnnouncement, deleteAnnouncement } from '@/services/announcementService';
 
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const { toast } = useToast();
 
+  const fetchAnnouncementsData = useCallback(async () => {
+    setIsFetching(true);
+    try {
+      const data = await getAnnouncements();
+      setAnnouncements(data);
+    } catch (error) {
+      console.error("Failed to fetch announcements:", error);
+      toast({ title: "Error", description: "Could not fetch announcements.", variant: "destructive" });
+    } finally {
+      setIsFetching(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
-    // Simulate fetching data
-    setAnnouncements(mockAnnouncements);
-  }, []);
+    fetchAnnouncementsData();
+  }, [fetchAnnouncementsData]);
 
   const handleFormSubmit = async (data: { title: string; content: string }) => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (editingAnnouncement) {
-      // Update existing announcement
-      setAnnouncements(prev => 
-        prev.map(ann => ann.id === editingAnnouncement.id ? { ...ann, ...data } : ann)
-      );
-      toast({ title: "Success!", description: "Announcement updated successfully." });
-    } else {
-      // Create new announcement
-      const newAnnouncement: Announcement = {
-        id: `ann-${Date.now()}`, // Simple unique ID
-        ...data,
-        createdAt: new Date().toISOString(),
-      };
-      setAnnouncements(prev => [newAnnouncement, ...prev]);
-      toast({ title: "Success!", description: "Announcement created successfully." });
+    try {
+      if (editingAnnouncement) {
+        await updateAnnouncement(editingAnnouncement.id, data);
+        toast({ title: "Success!", description: "Announcement updated successfully." });
+      } else {
+        await addAnnouncement(data);
+        toast({ title: "Success!", description: "Announcement created successfully." });
+      }
+      fetchAnnouncementsData(); // Re-fetch data
+      setIsDialogOpen(false);
+      setEditingAnnouncement(null);
+    } catch (error) {
+      console.error("Failed to submit announcement:", error);
+      toast({ title: "Error", description: "Could not save announcement.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-    setIsDialogOpen(false);
-    setEditingAnnouncement(null);
   };
 
   const handleEdit = (announcement: Announcement) => {
@@ -63,10 +70,17 @@ export default function AdminAnnouncementsPage() {
   };
 
   const handleDelete = async (announcementId: string) => {
-    // Simulate API call for deletion
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setAnnouncements(prev => prev.filter(ann => ann.id !== announcementId));
-    toast({ title: "Deleted!", description: "Announcement removed.", variant: "destructive" });
+    setIsLoading(true); // Indicate loading for delete operation
+    try {
+      await deleteAnnouncement(announcementId);
+      toast({ title: "Deleted!", description: "Announcement removed.", variant: "destructive" });
+      fetchAnnouncementsData(); // Re-fetch data
+    } catch (error) {
+      console.error("Failed to delete announcement:", error);
+      toast({ title: "Error", description: "Could not delete announcement.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const openNewAnnouncementDialog = () => {
@@ -77,14 +91,14 @@ export default function AdminAnnouncementsPage() {
   return (
     <div>
       <PageTitle title="Manage Announcements" description="Create, view, edit, and delete platform announcements.">
-        <Button onClick={openNewAnnouncementDialog}>
+        <Button onClick={openNewAnnouncementDialog} disabled={isLoading}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add New Announcement
         </Button>
       </PageTitle>
 
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
           if (!open) {
-            setEditingAnnouncement(null); // Reset editing state when dialog closes
+            setEditingAnnouncement(null);
           }
           setIsDialogOpen(open);
       }}>
@@ -105,11 +119,17 @@ export default function AdminAnnouncementsPage() {
         </DialogContent>
       </Dialog>
 
-      <AnnouncementTable 
-        announcements={announcements} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
-      />
+      {isFetching ? (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <AnnouncementTable 
+          announcements={announcements} 
+          onEdit={handleEdit} 
+          onDelete={handleDelete} 
+        />
+      )}
     </div>
   );
 }

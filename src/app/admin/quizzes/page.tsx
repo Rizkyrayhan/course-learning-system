@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PageTitle from '@/components/common/PageTitle';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,53 +13,73 @@ import {
 } from '@/components/ui/dialog';
 import { QuizForm, type QuizFormValues, NONE_COURSE_VALUE } from '@/components/admin/QuizForm';
 import { QuizTable } from '@/components/admin/QuizTable';
-import type { Quiz } from '@/types';
-import { mockQuizzes, mockCourses } from '@/data/mock'; // Using mock data
+import type { Quiz, Course } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { getQuizzes, addQuiz, updateQuiz, deleteQuiz } from '@/services/quizService';
+import { getCourses } from '@/services/courseService';
 
 export default function AdminQuizzesPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const { toast } = useToast();
 
-  const courseOptions = mockCourses.map(course => ({ id: course.id, title: course.title }));
+  const courseOptions = courses.map(course => ({ id: course.id, title: course.title }));
 
+  const fetchData = useCallback(async () => {
+    setIsFetching(true);
+    try {
+      const [quizzesData, coursesData] = await Promise.all([
+        getQuizzes(),
+        getCourses()
+      ]);
+      setQuizzes(quizzesData);
+      setCourses(coursesData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      toast({ title: "Error", description: "Could not fetch quizzes or courses.", variant: "destructive" });
+    } finally {
+      setIsFetching(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    // Simulate fetching data
-    setQuizzes(mockQuizzes);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   const handleFormSubmit = async (data: QuizFormValues) => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     const finalCourseId = data.courseId === NONE_COURSE_VALUE ? undefined : data.courseId;
-    const submissionData = { ...data, courseId: finalCourseId };
+    const submissionData = { 
+      ...data, 
+      courseId: finalCourseId,
+      questions: data.questions.map(ques => ({
+        ...ques, 
+        id: ques.id || `q-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+      })) 
+    };
 
-    if (editingQuiz) {
-      // Update existing quiz
-      setQuizzes(prev => 
-        prev.map(q => q.id === editingQuiz.id ? { ...q, ...submissionData, questions: submissionData.questions.map(ques => ({...ques, id: ques.id || `q-${Date.now()}-${Math.random()}`})) } : q)
-      );
-      toast({ title: "Success!", description: "Quiz updated successfully." });
-    } else {
-      // Create new quiz
-      const newQuiz: Quiz = {
-        id: `quiz-${Date.now()}`, // Simple unique ID
-        ...submissionData,
-        questions: submissionData.questions.map(ques => ({...ques, id: `q-${Date.now()}-${Math.random()}`})),
-      };
-      setQuizzes(prev => [newQuiz, ...prev]);
-      toast({ title: "Success!", description: "Quiz created successfully." });
+    try {
+      if (editingQuiz) {
+        await updateQuiz(editingQuiz.id, submissionData);
+        toast({ title: "Success!", description: "Quiz updated successfully." });
+      } else {
+        await addQuiz(submissionData as Omit<Quiz, 'id' | 'createdAt' | 'updatedAt'>);
+        toast({ title: "Success!", description: "Quiz created successfully." });
+      }
+      fetchData(); // Re-fetch data
+      setIsDialogOpen(false);
+      setEditingQuiz(null);
+    } catch (error) {
+      console.error("Failed to submit quiz:", error);
+      toast({ title: "Error", description: "Could not save quiz.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-    setIsDialogOpen(false);
-    setEditingQuiz(null);
   };
 
   const handleEdit = (quiz: Quiz) => {
@@ -68,10 +88,17 @@ export default function AdminQuizzesPage() {
   };
 
   const handleDelete = async (quizId: string) => {
-    // Simulate API call for deletion
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setQuizzes(prev => prev.filter(q => q.id !== quizId));
-    toast({ title: "Deleted!", description: "Quiz removed.", variant: "destructive" });
+    setIsLoading(true);
+    try {
+      await deleteQuiz(quizId);
+      toast({ title: "Deleted!", description: "Quiz removed.", variant: "destructive" });
+      fetchData(); // Re-fetch data
+    } catch (error) {
+      console.error("Failed to delete quiz:", error);
+      toast({ title: "Error", description: "Could not delete quiz.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const openNewQuizDialog = () => {
@@ -82,14 +109,14 @@ export default function AdminQuizzesPage() {
   return (
     <div>
       <PageTitle title="Manage Quizzes" description="Create, view, edit, and delete quizzes for courses.">
-        <Button onClick={openNewQuizDialog}>
+        <Button onClick={openNewQuizDialog} disabled={isLoading}>
           <PlusCircle className="mr-2 h-4 w-4" /> Add New Quiz
         </Button>
       </PageTitle>
 
       <Dialog open={isDialogOpen} onOpenChange={(open) => {
           if (!open) {
-            setEditingQuiz(null); // Reset editing state when dialog closes
+            setEditingQuiz(null);
           }
           setIsDialogOpen(open);
       }}>
@@ -111,12 +138,17 @@ export default function AdminQuizzesPage() {
         </DialogContent>
       </Dialog>
 
-      <QuizTable 
-        quizzes={quizzes} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
-      />
+      {isFetching ? (
+         <div className="flex justify-center items-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <QuizTable 
+          quizzes={quizzes} 
+          onEdit={handleEdit} 
+          onDelete={handleDelete} 
+        />
+      )}
     </div>
   );
 }
-

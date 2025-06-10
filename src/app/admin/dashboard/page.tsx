@@ -5,7 +5,7 @@ import PageTitle from '@/components/common/PageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Presentation, Settings, Users, MessageSquare } from 'lucide-react';
+import { Presentation, Settings, Users, Library } from 'lucide-react'; // Changed MessageSquare to Library
 import { useAuth } from '@/hooks/useAuth';
 
 export default function AdminDashboardPage() {
@@ -37,6 +37,21 @@ export default function AdminDashboardPage() {
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="font-headline text-xl flex items-center text-primary">
+              <Library className="mr-3 h-6 w-6" /> {/* Changed icon */}
+              Manage Courses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">Create, edit, and organize course content.</p>
+            <Button asChild className="w-full">
+              <Link href="/admin/courses">Go to Courses</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl flex items-center text-primary">
               <Settings className="mr-3 h-6 w-6" />
               Manage Quizzes
             </CardTitle>
@@ -59,20 +74,6 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">View and manage student and instructor accounts.</p>
-            <Button disabled className="w-full">Coming Soon</Button>
-          </CardContent>
-        </Card>
-
-        {/* Placeholder for future Course Management */}
-         <Card className="opacity-50 cursor-not-allowed">
-          <CardHeader>
-            <CardTitle className="font-headline text-xl flex items-center text-muted-foreground">
-              <MessageSquare className="mr-3 h-6 w-6" />
-              Manage Courses (Soon)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Create, edit, and organize course content.</p>
             <Button disabled className="w-full">Coming Soon</Button>
           </CardContent>
         </Card>

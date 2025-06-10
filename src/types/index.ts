@@ -1,3 +1,4 @@
+
 import type { User as FirebaseUser } from 'firebase/auth';
 
 export interface Announcement {
@@ -5,6 +6,7 @@ export interface Announcement {
   title: string;
   content: string;
   createdAt: string; // ISO date string
+  updatedAt?: string; // ISO date string
 }
 
 export interface Course {
@@ -16,6 +18,8 @@ export interface Course {
   duration: string;
   category: string; // e.g., "Web Development", "Data Science"
   modules?: CourseModule[]; // Optional list of modules
+  createdAt: string; // ISO date string
+  updatedAt?: string; // ISO date string
 }
 
 export interface CourseModule {
@@ -46,6 +50,8 @@ export interface Quiz {
   title: string;
   description?: string;
   questions: Question[];
+  createdAt: string; // ISO date string
+  updatedAt?: string; // ISO date string
 }
 
 // User type could be extended if we store more info in Firestore

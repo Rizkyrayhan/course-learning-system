@@ -4,13 +4,43 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
 import AnnouncementCard from '@/components/common/AnnouncementCard';
-import { mockAnnouncements, mockCourses } from '@/data/mock'; // Using mock data
-import { ArrowRight, BookOpenCheck, Users, Zap } from 'lucide-react';
-import CourseCard from '@/components/student/CourseCard'; // Re-using for homepage display
+import { ArrowRight, BookOpenCheck, Users, Zap, Loader2 } from 'lucide-react';
+import CourseCard from '@/components/student/CourseCard';
+import type { Announcement, Course } from '@/types';
+import { useEffect, useState } from 'react';
+import { getAnnouncements } from '@/services/announcementService';
+import { getCourses } from '@/services/courseService';
+import { useToast } from '@/hooks/use-toast';
 
 export default function HomePage() {
-  // For demonstration, we'll show a few courses on the homepage
-  const featuredCourses = mockCourses.slice(0, 3);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const [announcementsData, coursesData] = await Promise.all([
+          getAnnouncements(),
+          getCourses()
+        ]);
+        setAnnouncements(announcementsData.slice(0, 2)); // Show latest 2 announcements
+        setFeaturedCourses(coursesData.slice(0, 3)); // Show 3 featured courses
+      } catch (error) {
+        console.error("Failed to fetch homepage data:", error);
+        toast({
+          title: "Error",
+          description: "Could not load announcements or courses. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [toast]);
 
   return (
     <div className="flex flex-col items-center">
@@ -28,7 +58,7 @@ export default function HomePage() {
               <Link href="/register">Get Started Free</Link>
             </Button>
             <Button variant="outline" size="lg" asChild className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary shadow-lg transform hover:scale-105 transition-transform">
-              <Link href="/login">Explore Courses</Link>
+              <Link href="/student/dashboard">Explore Courses</Link>
             </Button>
           </div>
         </div>
@@ -68,17 +98,24 @@ export default function HomePage() {
               Featured Courses
             </h2>
             <Button variant="link" asChild className="text-accent hover:text-accent/80">
-              <Link href="/login">View All Courses <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <Link href="/student/dashboard">View All Courses <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : featuredCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          ) : (
+             <p className="text-center text-muted-foreground">No featured courses available at the moment.</p>
+          )}
         </div>
       </section>
-
 
       {/* Announcements Section */}
       <section className="w-full py-16 md:py-24 bg-background">
@@ -86,9 +123,13 @@ export default function HomePage() {
           <h2 className="font-headline text-3xl md:text-4xl font-semibold text-center mb-12 text-foreground">
             Latest Announcements
           </h2>
-          {mockAnnouncements.length > 0 ? (
+          {isLoading ? (
+             <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : announcements.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {mockAnnouncements.map((announcement) => (
+              {announcements.map((announcement) => (
                 <AnnouncementCard key={announcement.id} announcement={announcement} />
               ))}
             </div>
