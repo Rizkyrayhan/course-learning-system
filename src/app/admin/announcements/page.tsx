@@ -16,6 +16,7 @@ import { AnnouncementTable } from '@/components/admin/AnnouncementTable';
 import type { Announcement } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Loader2 } from 'lucide-react';
+// Import client-side service functions
 import { getAnnouncements, addAnnouncement, updateAnnouncement, deleteAnnouncement } from '@/services/announcementService';
 
 export default function AdminAnnouncementsPage() {
@@ -29,7 +30,7 @@ export default function AdminAnnouncementsPage() {
   const fetchAnnouncementsData = useCallback(async () => {
     setIsFetching(true);
     try {
-      const data = await getAnnouncements();
+      const data = await getAnnouncements(); // Now calls client-side Firestore
       setAnnouncements(data);
     } catch (error) {
       console.error("Failed to fetch announcements:", error);
@@ -47,10 +48,10 @@ export default function AdminAnnouncementsPage() {
     setIsLoading(true);
     try {
       if (editingAnnouncement) {
-        await updateAnnouncement(editingAnnouncement.id, data);
+        await updateAnnouncement(editingAnnouncement.id, data); // Now calls client-side Firestore
         toast({ title: "Success!", description: "Announcement updated successfully." });
       } else {
-        await addAnnouncement(data);
+        await addAnnouncement(data); // Now calls client-side Firestore
         toast({ title: "Success!", description: "Announcement created successfully." });
       }
       fetchAnnouncementsData(); // Re-fetch data
@@ -70,11 +71,11 @@ export default function AdminAnnouncementsPage() {
   };
 
   const handleDelete = async (announcementId: string) => {
-    setIsLoading(true); // Indicate loading for delete operation
+    setIsLoading(true); 
     try {
-      await deleteAnnouncement(announcementId);
+      await deleteAnnouncement(announcementId); // Now calls client-side Firestore
       toast({ title: "Deleted!", description: "Announcement removed.", variant: "destructive" });
-      fetchAnnouncementsData(); // Re-fetch data
+      fetchAnnouncementsData(); 
     } catch (error) {
       console.error("Failed to delete announcement:", error);
       toast({ title: "Error", description: "Could not delete announcement.", variant: "destructive" });

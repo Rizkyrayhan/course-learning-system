@@ -1,18 +1,16 @@
 
-"use server";
-
 import { db } from '@/lib/firebase';
 import type { Announcement } from '@/types';
-import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  query, 
-  orderBy, 
-  Timestamp 
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+  Timestamp
 } from 'firebase/firestore';
 
 const announcementsCollection = collection(db, 'announcements');
@@ -33,17 +31,29 @@ export async function getAnnouncements(): Promise<Announcement[]> {
 }
 
 export async function addAnnouncement(data: Omit<Announcement, 'id' | 'createdAt' | 'updatedAt'>): Promise<Announcement> {
-  const newAnnouncement = { 
-    ...data, 
-    createdAt: new Date().toISOString(),
+  const newAnnouncementData = {
+    ...data,
+    createdAt: Timestamp.fromDate(new Date()), // Store as Firestore Timestamp
+    updatedAt: Timestamp.fromDate(new Date()),
   };
-  const docRef = await addDoc(announcementsCollection, newAnnouncement);
-  return { id: docRef.id, ...newAnnouncement };
+  const docRef = await addDoc(announcementsCollection, newAnnouncementData);
+  // For consistency with the type, we immediately read it back or simulate the expected output structure.
+  // However, to avoid an extra read, we'll construct it based on what we sent and the ID.
+  return {
+    id: docRef.id,
+    title: data.title,
+    content: data.content,
+    createdAt: newAnnouncementData.createdAt.toDate().toISOString(),
+    updatedAt: newAnnouncementData.updatedAt.toDate().toISOString(),
+  };
 }
 
 export async function updateAnnouncement(id: string, data: Partial<Omit<Announcement, 'id' | 'createdAt'>>): Promise<void> {
   const docRef = doc(db, 'announcements', id);
-  await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString()});
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: Timestamp.fromDate(new Date()) // Store as Firestore Timestamp
+  });
 }
 
 export async function deleteAnnouncement(id: string): Promise<void> {

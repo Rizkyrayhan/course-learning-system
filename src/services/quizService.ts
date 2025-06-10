@@ -1,17 +1,15 @@
 
-"use server";
-
 import { db } from '@/lib/firebase';
 import type { Quiz, Question } from '@/types';
-import { 
-  collection, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  query, 
+import {
+  collection,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
   orderBy,
   where,
   Timestamp
@@ -61,19 +59,39 @@ export async function getQuizzesByCourseId(courseId: string): Promise<Quiz[]> {
 }
 
 export async function addQuiz(data: Omit<Quiz, 'id' | 'createdAt' | 'updatedAt'>): Promise<Quiz> {
-  const newQuiz = { 
-    ...data, 
-    createdAt: new Date().toISOString(),
+  const newQuizData = {
+    ...data,
+    questions: (data.questions || []).map(q => ({
+        ...q,
+        id: q.id || `q-${Date.now()}-${Math.random().toString(36).substring(2,7)}`
+    })),
+    createdAt: Timestamp.fromDate(new Date()),
+    updatedAt: Timestamp.fromDate(new Date()),
   };
-  const docRef = await addDoc(quizzesCollection, newQuiz);
-  // Fetch the newly created document to ensure consistent data structure (including converted timestamps if applicable)
-  const newDocSnap = await getDoc(docRef);
-  return mapQuizDocument(newDocSnap);
+  const docRef = await addDoc(quizzesCollection, newQuizData);
+  // Constructing the return object
+  return {
+    id: docRef.id,
+    ...data, // original data
+    questions: newQuizData.questions,
+    createdAt: newQuizData.createdAt.toDate().toISOString(),
+    updatedAt: newQuizData.updatedAt.toDate().toISOString(),
+  };
 }
 
 export async function updateQuiz(id: string, data: Partial<Omit<Quiz, 'id' | 'createdAt'>>): Promise<void> {
   const docRef = doc(db, 'quizzes', id);
-  await updateDoc(docRef, { ...data, updatedAt: new Date().toISOString()});
+  const updateData = {
+      ...data,
+      updatedAt: Timestamp.fromDate(new Date())
+  };
+  if (data.questions) {
+      updateData.questions = data.questions.map(q => ({
+          ...q,
+          id: q.id || `q-${Date.now()}-${Math.random().toString(36).substring(2,7)}`
+      }));
+  }
+  await updateDoc(docRef, updateData);
 }
 
 export async function deleteQuiz(id: string): Promise<void> {
