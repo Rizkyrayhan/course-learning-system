@@ -1,56 +1,44 @@
 
-"use client";
-
-import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { AlertCircle, ChevronRight, Clock, FileText, Users, Video, HelpCircle, ListChecks, Loader2 } from 'lucide-react';
+import { AlertCircle, ChevronRight, Clock, FileText, Users, Video, HelpCircle, ListChecks } from 'lucide-react';
 import PageTitle from '@/components/common/PageTitle';
 import type { Course, Quiz } from '@/types';
-import { useEffect, useState, useCallback } from 'react';
-import { getCourseById } from '@/services/courseService';
+import { getCourseById, getCourses } from '@/services/courseService';
 import { getQuizzesByCourseId } from '@/services/quizService';
-import { useToast } from '@/hooks/use-toast';
+// Toasts would need to be handled in a child client component if still needed for actions on this page.
 
-export default function CourseDetailPage() {
-  const params = useParams();
-  const courseId = params.courseId as string;
-  
-  const [course, setCourse] = useState<Course | null>(null);
-  const [courseQuizzes, setCourseQuizzes] = useState<Quiz[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+export async function generateStaticParams() {
+  try {
+    const courses = await getCourses();
+    return courses.map((course) => ({
+      courseId: course.id,
+    }));
+  } catch (error) {
+    console.error("Failed to generate static params for courses:", error);
+    return [];
+  }
+}
 
-  const fetchData = useCallback(async () => {
-    if (!courseId) return;
-    setIsLoading(true);
-    try {
-      const [courseData, quizzesData] = await Promise.all([
-        getCourseById(courseId),
-        getQuizzesByCourseId(courseId)
-      ]);
-      setCourse(courseData);
-      setCourseQuizzes(quizzesData);
-    } catch (error) {
-      console.error("Failed to fetch course details:", error);
-      toast({ title: "Error", description: "Could not load course details.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [courseId, toast]);
+export default async function CourseDetailPage({ params }: { params: { courseId: string } }) {
+  const courseId = params.courseId;
+  let course: Course | null = null;
+  let courseQuizzes: Quiz[] = [];
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+  try {
+    // Fetch data directly as this is a Server Component
+    const [courseData, quizzesData] = await Promise.all([
+      getCourseById(courseId),
+      getQuizzesByCourseId(courseId)
+    ]);
+    course = courseData;
+    courseQuizzes = quizzesData;
+  } catch (error) {
+    console.error("Failed to fetch course details:", error);
+    // Error handling can be more sophisticated, e.g., redirecting or showing a generic error page
+    // For now, if course is null, the existing "Course Not Found" message will show.
   }
 
   if (!course) {
@@ -76,8 +64,8 @@ export default function CourseDetailPage() {
             <Image 
               src={course.imageUrl} 
               alt={course.title} 
-              layout="fill" 
-              objectFit="cover" 
+              fill 
+              style={{objectFit: 'cover'}}
               data-ai-hint="education learning"
             />
             <div className="absolute inset-0 bg-black/30 flex flex-col justify-end p-6">
@@ -93,7 +81,7 @@ export default function CourseDetailPage() {
                 <Card key={module.id} className="shadow-md">
                   <CardHeader>
                     <CardTitle className="font-headline text-xl text-primary">
-                      {module.title} {/* Using fetched module title */}
+                      {module.title}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

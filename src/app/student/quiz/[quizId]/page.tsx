@@ -1,49 +1,36 @@
 
-"use client";
-
-import { useParams } from 'next/navigation';
 import QuizView from '@/components/student/QuizView';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import PageTitle from '@/components/common/PageTitle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import type { Quiz } from '@/types';
-import { useEffect, useState, useCallback } from 'react';
-import { getQuizById } from '@/services/quizService';
-import { useToast } from '@/hooks/use-toast';
+import { getQuizById, getQuizzes } from '@/services/quizService';
+// Toasts would need to be handled in QuizView or a child client component.
 
-export default function TakeQuizPage() {
-  const params = useParams();
-  const quizId = params.quizId as string;
-  
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+export async function generateStaticParams() {
+  try {
+    const quizzes = await getQuizzes();
+    return quizzes.map((quiz) => ({
+      quizId: quiz.id,
+    }));
+  } catch (error) {
+    console.error("Failed to generate static params for quizzes:", error);
+    return [];
+  }
+}
 
-  const fetchQuizData = useCallback(async () => {
-    if (!quizId) return;
-    setIsLoading(true);
-    try {
-      const data = await getQuizById(quizId);
-      setQuiz(data);
-    } catch (error) {
-      console.error("Failed to fetch quiz:", error);
-      toast({ title: "Error", description: "Could not load quiz.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [quizId, toast]);
+export default async function TakeQuizPage({ params }: { params: { quizId: string } }) {
+  const quizId = params.quizId;
+  let quiz: Quiz | null = null;
 
-  useEffect(() => {
-    fetchQuizData();
-  }, [fetchQuizData]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+  try {
+    // Fetch data directly as this is a Server Component
+    quiz = await getQuizById(quizId);
+  } catch (error) {
+    console.error("Failed to fetch quiz:", error);
+    // Error handling can be more sophisticated.
+    // If quiz remains null, the "Quiz Not Found" message will show.
   }
 
   if (!quiz) {
