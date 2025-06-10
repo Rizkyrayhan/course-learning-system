@@ -3,6 +3,7 @@ import { StudentRegisterForm } from "@/components/auth/StudentRegisterForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import AuthRedirect from "@/components/auth/AuthRedirect";
+import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
   return (
